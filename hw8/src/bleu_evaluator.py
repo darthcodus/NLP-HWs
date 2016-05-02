@@ -19,7 +19,8 @@ class BleuEvaluator:
     @staticmethod
     def ngramgenerator(sentence, n):
         for i in range(0, len(sentence) - n + 1):
-            yield tuple(sentence[i:i+n])
+            # yield tuple(sentence[i:i+n])
+            yield tuple((x.lower() for x in sentence[i:i+n]))
 
     def computeMaxNgramCountsForSentence(self, sentenceidx, n):
         maxngramsdic = {}
