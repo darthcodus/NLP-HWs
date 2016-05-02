@@ -1,4 +1,4 @@
-from math import log
+from math import exp, log
 
 # equivalent to python 3.5  math.isclose/cmath.isclose
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
@@ -91,15 +91,18 @@ class BleuEvaluator:
             bestmatchlength = len(self.ReferencesTranslationList[0][idx])
             bestmatchdistance = abs(bestmatchlength - len(sentence))
             for ref in self.ReferencesTranslationList:
-                d = len(ref[idx]) - len(sentence)
+                d = abs(len(ref[idx]) - len(sentence))
                 if bestmatchdistance > d:
                     bestmatchlength = len(ref[idx])
                     bestmatchdistance = d
             r += bestmatchlength
-        lgbleuscore = min( 0, 1 - ( float(r) / float(c) ) )
-        for n in range(1, self.N):
+        lgbleuscore = min( 0, 1-(float(r)/float(c)) )
+        for n in range(1, self.N+1):
             pn = self.getPn(candidateTranslationSentences, n)
             if self.DEBUG:
                 print( 'log(Pn) for n = %d is %f' % (n, pn) )
             lgbleuscore += (1/float(self.N)) * pn
-        return lgbleuscore
+        if self.DEBUG:
+            print('log(bleuscore) = %f' % lgbleuscore)
+            print('bleuscore = %f' % exp(lgbleuscore))
+        return exp(lgbleuscore)
