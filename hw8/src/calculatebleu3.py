@@ -35,15 +35,15 @@ def main():
         for reffile in os.listdir(referenceFilePath):
             if DEBUG:
                 print("Opening reference %s" % reffile)
-            references.append(os.path.join(referenceFilePath, reffile))
+            references.append(readTokenizedLines(os.path.join(referenceFilePath, reffile)))
 
     if DEBUG:
+        # print(candidate)
+        # print(references)
         print(candidate[0])
-        print(candidate[1])
         print(references[0][0])
-        print(references[0][1])
 
-    beval = BleuEvaluator(references)
+    beval = BleuEvaluator(references, 4, DEBUG)
     writeOutputFile(OUTPUT_FILE, beval.evaluate(candidate))
 
 if __name__ == "__main__":

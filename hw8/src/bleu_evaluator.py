@@ -6,28 +6,25 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 
 class BleuEvaluator:
 
-    def __init__(self, references, debug = False):
+    def __init__(self, references, n, debug = False):
+        self.N = n
         self.ReferencesTranslationList = references
         self.DEBUG = debug
         self.Ngrams = {} # dictionary of mappings from ngram length -> list of ngram dictionaries corresponding to sentence
         if debug:
             # check all translations have the same number of sentences
-            assert not any(len(x) != references[0] for x in references)
-        self.prepareModel()
-
-    def prepareModel(self):
-        assert self.ReferencesTranslationList is not None
+            assert not any(len(x) != len(references[0]) for x in references)
         self.computeReferenceNgramCounts()
 
     @staticmethod
     def ngramgenerator(sentence, n):
-        for i in xrange(0, len(sentence) - n + 1):
+        for i in range(0, len(sentence) - n + 1):
             yield tuple(sentence[i:i+n])
 
     def computeMaxNgramCountsForSentence(self, sentenceidx, n):
         maxngramsdic = {}
         for translation in self.ReferencesTranslationList:
-            sentence = self.ReferencesTranslationList[sentenceidx]
+            sentence = translation[sentenceidx]
             dic = {}
             for ngram in BleuEvaluator.ngramgenerator(sentence, n):
                 if ngram not in dic:
@@ -41,9 +38,9 @@ class BleuEvaluator:
         return maxngramsdic
 
     def computeReferenceNgramCounts(self):
-        for n in xrange(1, self.N + 1):
+        for n in range(1, self.N + 1):
             self.Ngrams[n] = []
-            for i in xrange(0, len(self.ReferencesTranslationList[0])):
+            for i in range(0, len(self.ReferencesTranslationList[0])):
                 # sentence i
                 self.Ngrams[n].append(self.computeMaxNgramCountsForSentence(i, n))
 
@@ -58,16 +55,50 @@ class BleuEvaluator:
         if ngram in self.Ngrams[len(ngram)][sentenceidx]:
             return self.Ngrams[len(ngram)][sentenceidx][ngram]
 
-    def getModifiedNGramPrecision(self, sentence, n):
-        ngrams = BleuEvaluator.ngramgenerator(sentence, n)
-        ngramcounts = {}
-        for ngram in ngrams:
-            if ngram not in ngramcounts:
-                ngramcounts[ngram] = 0
-            ngramcounts[ngram] += 1
+    def getPn(self, candidateTranslationSentences, n):
+        if self.DEBUG:
+            assert n <= self.N and n > 0
+        if n > self.N or n < 1:
+            return 0
 
-        for ngram, count in ngramcounts.items():
-            refcount = self.Ngrams.getNGramCount(ngram)
-            ngramcounts =
+        totalngrams = 0
+        clippedtotal = 0
+        for idx, sentence in enumerate(candidateTranslationSentences):
+            ngrams = BleuEvaluator.ngramgenerator(sentence, n)
+            ngramcounts = {}
+            for ngram in ngrams:
+                if ngram not in ngramcounts:
+                    ngramcounts[ngram] = 0
+                ngramcounts[ngram] += 1
+                totalngrams += 1
 
-    def evaluate(self, candidate):
+            for ngram, count in ngramcounts.items():
+                if ngram in self.Ngrams[n][idx]:
+                    clippedtotal += min(self.Ngrams[n][idx][ngram], count)
+        if self.DEBUG:
+            print('Modified prec is %d/%d' % (clippedtotal, totalngrams) )
+        if clippedtotal is not 0:
+            return log(clippedtotal) - log(totalngrams)
+        return 0
+
+    def evaluate(self, candidateTranslationSentences):
+        if self.DEBUG:
+            assert len(candidateTranslationSentences) == len(self.ReferencesTranslationList[0])
+        c = sum(len(x) for x in candidateTranslationSentences)
+        r = 0
+        for idx, sentence in enumerate(candidateTranslationSentences):
+            bestmatchlength = len(self.ReferencesTranslationList[0][idx])
+            bestmatchdistance = abs(bestmatchlength - len(sentence))
+            for ref in self.ReferencesTranslationList:
+                d = len(ref[idx]) - len(sentence)
+                if bestmatchdistance > d:
+                    bestmatchlength = len(ref[idx])
+                    bestmatchdistance = d
+            r += bestmatchlength
+        lgbleuscore = min( 0, 1 - ( float(r) / float(c) ) )
+        for n in range(1, self.N):
+            pn = self.getPn(candidateTranslationSentences, n)
+            if self.DEBUG:
+                print( 'log(Pn) for n = %d is %f' % (n, pn) )
+            lgbleuscore += (1/float(self.N)) * pn
+        return lgbleuscore
