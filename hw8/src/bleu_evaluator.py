@@ -44,6 +44,8 @@ class BleuEvaluator:
             for i in range(0, len(self.ReferencesTranslationList[0])):
                 # sentence i
                 self.Ngrams[n].append(self.computeMaxNgramCountsForSentence(i, n))
+        if self.DEBUG:
+            assert not any(len(self.ReferencesTranslationList[0]) != len(self.Ngrams[x]) for x in self.Ngrams)
 
     def getRefNGramCount(self, sentenceidx, ngram):
         if self.DEBUG:
@@ -58,7 +60,7 @@ class BleuEvaluator:
 
     def getPn(self, candidateTranslationSentences, n):
         if self.DEBUG:
-            assert n <= self.N and n > 0
+            assert 0 < n <= self.N
         if n > self.N or n < 1:
             return 0
 
