@@ -11,7 +11,7 @@ OUTPUT_FILE = "bleu_out.txt"
 
 def writeOutputFile(outputFilePath, val):
     with open(outputFilePath, 'wt', encoding='utf-8') as fout:
-        fout.write('%f\n' % val)
+        fout.write('%.12f\n' % val)
 
 def readTokenizedLines(filePath):
     fileTokenizedLines = []
