@@ -1,9 +1,5 @@
 from math import exp, log
 
-# equivalent to python 3.5  math.isclose/cmath.isclose
-def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
-    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
-
 class BleuEvaluator:
 
     def __init__(self, references, n, debug = False):
@@ -46,17 +42,6 @@ class BleuEvaluator:
                 self.Ngrams[n].append(self.computeMaxNgramCountsForSentence(i, n))
         if self.DEBUG:
             assert not any(len(self.ReferencesTranslationList[0]) != len(self.Ngrams[x]) for x in self.Ngrams)
-
-    def getRefNGramCount(self, sentenceidx, ngram):
-        if self.DEBUG:
-            assert len(ngram) <= self.N
-            assert len(ngram) in self.NgramsDics
-
-        if len(ngram) > self.N:
-            return 0
-
-        if ngram in self.Ngrams[len(ngram)][sentenceidx]:
-            return self.Ngrams[len(ngram)][sentenceidx][ngram]
 
     def getPn(self, candidateTranslationSentences, n):
         if self.DEBUG:
